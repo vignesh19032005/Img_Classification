@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Classifier - Educational Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            background-color: white;
+            padding: 15px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-tabs {
+            display: flex;
+            justify-content: flex-start;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
+            list-style: none;
+        }
+        .nav-tab {
+            padding: 10px 20px;
+            margin-right: 5px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .nav-tab.active {
+            border-bottom: 3px solid #4285f4;
+            font-weight: bold;
+            color: #4285f4;
+        }
+        .nav-tab:hover {
+            background-color: #f8f9fa;
+            border-bottom: 3px solid #dadce0;
+        }
+        .container {
+            display: flex;
+            max-width: 1200px;
+            margin: 40px auto;
+        }
+        .main-content {
+            flex: 7;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            margin-right: 20px;
+        }
+        .sidebar {
+            flex: 3;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            align-self: flex-start;
+            text-align: left;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            border-color: #4285f4;
+        }
+        .file-input-container {
+            position: relative;
+            margin: 15px 0;
+        }
+        .file-input {
+            display: none;
+        }
+        .file-input-label {
+            background-color: #4285f4;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-block;
+            transition: background-color 0.3s;
+        }
+        .file-input-label:hover {
+            background-color: #3367d6;
+        }
+        .selected-file-name {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #555;
+        }
+        .submit-btn {
+            background-color: #34a853;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 6px;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+        .submit-btn:hover {
+            background-color: #2d9246;
+        }
+        .submit-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .error {
+            color: #d93025;
+            font-weight: 500;
+            padding: 10px;
+            border-radius: 6px;
+            background-color: rgba(217, 48, 37, 0.1);
+            margin: 15px 0;
+        }
+        .results-container {
+            margin-top: 30px;
+        }
+        .image-display {
+            margin-bottom: 20px;
+        }
+        .image-display img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .predictions-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        .prediction-item {
+            background: #f8f9fa;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: left;
+            border-left: 5px solid #4285f4;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .prediction-class {
+            font-weight: bold;
+            font-size: 18px;
+            color: #202124;
+            margin-bottom: 5px;
+        }
+        .confidence-bar-container {
+            height: 12px;
+            background-color: #e0e0e0;
+            border-radius: 6px;
+            margin: 8px 0;
+            overflow: hidden;
+        }
+        .confidence-bar-fill {
+            height: 100%;
+            background-color: #4285f4;
+            border-radius: 6px;
+        }
+        .confidence-percent {
+            color: #5f6368;
+            font-size: 14px;
+        }
+        .loading {
+            display: none;
+            margin: 20px auto;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: #4285f4;
+            animation: spinner 1s ease-in-out infinite;
+            margin: 0 auto;
+        }
+        .sidebar h2 {
+            color: #333;
+            font-size: 1.5rem;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        .sidebar h3 {
+            color: #444;
+            font-size: 1.2rem;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        .sidebar p {
+            color: #555;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+        .info-box {
+            background-color: #e8f0fe;
+            border-left: 4px solid #4285f4;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .tip-box {
+            background-color: #e6f4ea;
+            border-left: 4px solid #34a853;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .architecture-diagram {
+            width: 100%;
+            max-width: 280px;
+            margin: 15px auto;
+            display: block;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            background: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .collapsible {
+            background-color: #f8f9fa;
+            color: #444;
+            cursor: pointer;
+            padding: 15px;
+            width: 100%;
+            border: none;
+            border-radius: 4px;
+            text-align: left;
+            outline: none;
+            font-size: 16px;
+            transition: 0.4s;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .collapsible:hover {
+            background-color: #eff1f4;
+        }
+        .collapsible:after {
+            content: '\002B';
+            color: #777;
+            font-weight: bold;
+            float: right;
+        }
+        .collapsible.active:after {
+            content: "\2212";
+        }
+        .collapsible-content {
+            padding: 0 15px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease-out;
+            background-color: #f8f9fa;
+            border-radius: 0 0 4px 4px;
+        }
+        @keyframes spinner {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Mobile responsive adjustments */
+        @media (max-width: 900px) {
+            .container {
+                flex-direction: column;
+            }
+            .main-content {
+                margin-right: 0;
+                margin-bottom: 20px;
+            }
+            .sidebar {
+                width: 100%;
+            }
+        }
+
+    .viz-stage {
+        margin-bottom: 30px;
+        padding: 15px;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .viz-image {
+        width: 224px;
+        height: 224px;
+        background-color: #eee;
+        margin: 15px auto;
+        border: 1px solid #ddd;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .viz-heatmap {
+        width: 100%;
+        height: 100px;
+        background-color: #eee;
+        margin: 15px auto;
+        border: 1px solid #ddd;
+        position: relative;
+    }
+    
+    #visualization-placeholder {
+        padding: 50px;
+        text-align: center;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        border: 2px dashed #ccc;
+        margin: 20px 0;
+    }
+    
+    .viz-layer-animation {
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 0.7; }
+        50% { opacity: 1; }
+        100% { opacity: 0.7; }
+    }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <ul class="nav-tabs">
+            <li class="nav-tab active" data-tab="classify-tab">Classify</li>
+            <li class="nav-tab" data-tab="learn-tab">Learn</li>
+            <li class="nav-tab" data-tab="visualize-tab">Visualize</li>
+            <li class="nav-tab" data-tab="about-tab">About</li>
+            <li class="nav-tab" data-tab="help-tab">Help</li>
+        </ul>
+    </header>
+
+    <div class="container">
+        <div class="main-content" id="classify-tab-content">
+            <h1>Image Classification</h1>
+            
+            <form id="upload-form" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="upload-area" id="drop-area">
+                    <div class="file-input-container">
+                        <label for="image-input" class="file-input-label">Choose an Image</label>
+                        <input type="file" id="image-input" name="image" accept="image/*" class="file-input" required>
+                    </div>
+                    <div class="selected-file-name" id="file-name"></div>
+                    
+                    <button type="submit" class="submit-btn" id="submit-btn" disabled>Classify Image</button>
+                </div>
+            </form>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Analyzing image...</p>
+            </div>
+
+            {% if error %}
+                <div class="error">{{ error }}</div>
+            {% endif %}
+
+            {% if file_url and predictions %}
+                <div class="results-container">
+                    <div class="image-display">
+                        <h2>Uploaded Image</h2>
+                        <img src="{{ file_url }}" alt="Uploaded Image">
+                    </div>
+                    
+                    <h2>Classification Results</h2>
+                    <ul class="predictions-list">
+                        {% for prediction in predictions %}
+                            <li class="prediction-item">
+                                <div class="prediction-class">{{ prediction.class|title }}</div>
+                                <div class="confidence-bar-container">
+                                    <div class="confidence-bar-fill" data-confidence="{{ prediction.confidence }}"></div>
+                                </div>
+                                <div class="confidence-percent">Confidence: {{ prediction.confidence|floatformat:1 }}%</div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="main-content" id="learn-tab-content" style="display: none;">
+            <h1>Learning Center</h1>
+            <p>Explore the fundamentals of image classification and deep learning concepts.</p>
+            
+            <button class="collapsible">What is Image Classification?</button>
+            <div class="collapsible-content">
+                <p>Image classification is the process of categorizing images into predefined classes or categories. It's one of the fundamental tasks in computer vision and has numerous applications from medical diagnosis to autonomous vehicles.</p>
+            </div>
+            
+            <button class="collapsible">How do Neural Networks Work?</button>
+            <div class="collapsible-content">
+                <p>Neural networks are computational models inspired by the human brain. They consist of layers of interconnected nodes (neurons) that process information. For image classification, convolutional neural networks (CNNs) are particularly effective as they can learn spatial hierarchies in image data.</p>
+            </div>
+            
+            <button class="collapsible">Understanding Confidence Scores</button>
+            <div class="collapsible-content">
+                <p>Confidence scores represent the model's certainty about its prediction. A higher percentage indicates greater confidence. However, high confidence doesn't always guarantee correctness - models can be confidently wrong, especially when encountering images unlike those they were trained on.</p>
+            </div>
+
+            <!-- Add this inside the learn-tab-content div, after the existing collapsible elements -->
+<button class="collapsible">Convolutional Neural Networks (CNNs) Explained</button>
+<div class="collapsible-content">
+    <p>CNNs are specialized neural networks for processing grid-like data such as images. They use convolution operations to automatically detect important features without manual feature extraction.</p>
+    <p>Key components of CNNs include:</p>
+    <ul>
+        <li><strong>Convolutional layers</strong>: Apply filters to detect features like edges, textures, and patterns</li>
+        <li><strong>Pooling layers</strong>: Reduce spatial dimensions while preserving important information</li>
+        <li><strong>Activation functions</strong>: Add non-linearity to learn complex patterns (commonly ReLU)</li>
+        <li><strong>Fully connected layers</strong>: Combine features for final classification</li>
+    </ul>
+</div>
+
+<button class="collapsible">Transfer Learning in Image Classification</button>
+<div class="collapsible-content">
+    <p>Transfer learning is a technique where a model developed for one task is reused as the starting point for a model on a different task. In image classification, pre-trained models like MobileNetV2 (used in this application) have already learned useful features from millions of images.</p>
+    <p>Benefits of transfer learning include:</p>
+    <ul>
+        <li>Reduced training time and computational resources</li>
+        <li>Better performance with less training data</li>
+        <li>Increased model generalization</li>
+    </ul>
+</div>
+
+<button class="collapsible">Common Applications of Image Classification</button>
+<div class="collapsible-content">
+    <p>Image classification powers numerous real-world applications:</p>
+    <ul>
+        <li><strong>Healthcare</strong>: Medical image analysis for disease detection</li>
+        <li><strong>Agriculture</strong>: Crop disease identification and quality assessment</li>
+        <li><strong>Retail</strong>: Visual search and product recognition</li>
+        <li><strong>Security</strong>: Object detection and surveillance systems</li>
+        <li><strong>Autonomous vehicles</strong>: Identifying road signs, pedestrians, and obstacles</li>
+        <li><strong>Content organization</strong>: Auto-tagging photos in social media and applications</li>
+    </ul>
+</div>
+        </div>
+        
+        <div class="main-content" id="about-tab-content" style="display: none;">
+            <h1>About This Tool</h1>
+            <p>This educational image classification tool was developed to help students understand deep learning concepts through hands-on experimentation.</p>
+            
+            <h2>Model Information</h2>
+            <p>This application uses a pre-trained convolutional neural network (CNN) that has been trained on the ImageNet dataset, containing over 1 million images across 1,000 classes.</p>
+            
+            <h2>Educational Purpose</h2>
+            <p>This tool is designed for educational purposes to demonstrate machine learning concepts in an interactive way. Students can experiment with different images to understand classification strengths and limitations.</p>
+        </div>
+        
+        <div class="main-content" id="help-tab-content" style="display: none;">
+            <h1>Help & FAQ</h1>
+            
+            <h2>Frequently Asked Questions</h2>
+            <button class="collapsible">Why did my image get misclassified?</button>
+            <div class="collapsible-content">
+                <p>Misclassifications can occur for several reasons: the image might be unusual or ambiguous, the lighting or angle might be challenging, or the model might not have been trained on similar examples.</p>
+            </div>
+            
+            <button class="collapsible">What image formats are supported?</button>
+            <div class="collapsible-content">
+                <p>This tool supports common image formats including JPEG, PNG, GIF, and BMP. For best results, use clear, well-lit images with the subject clearly visible.</p>
+            </div>
+            
+            <button class="collapsible">How can I interpret the results?</button>
+            <div class="collapsible-content">
+                <p>The results show the model's top predictions with confidence scores. Consider all predictions, not just the top one, especially when confidence scores are close. The model provides its best guess based on what it has learned from training data.</p>
+            </div>
+        </div>
+
+        <div class="main-content" id="visualize-tab-content" style="display: none;">
+            <h1>CNN Visualization</h1>
+            <p>Watch how your image is processed through each layer of the convolutional neural network.</p>
+            
+            <div id="visualization-container">
+                <div id="visualization-placeholder">
+                    <p>Upload an image in the Classify tab to see the CNN processing visualization here.</p>
+                </div>
+                <div id="visualization-stages" style="display: none;">
+                    <div class="viz-stage">
+                        <h3>Input Image</h3>
+                        <div class="viz-image" id="viz-input"></div>
+                        <p>Your original image is resized to 224x224 pixels for processing.</p>
+                    </div>
+                    
+                    <div class="viz-stage">
+                        <h3>Convolutional Layer 1</h3>
+                        <div class="viz-image" id="viz-conv1"></div>
+                        <p>Filters detect basic features like edges and colors.</p>
+                    </div>
+                    
+                    <div class="viz-stage">
+                        <h3>Pooling Layer 1</h3>
+                        <div class="viz-image" id="viz-pool1"></div>
+                        <p>Downsampling reduces dimensions while preserving important features.</p>
+                    </div>
+                    
+                    <div class="viz-stage">
+                        <h3>Convolutional Layer 2</h3>
+                        <div class="viz-image" id="viz-conv2"></div>
+                        <p>Deeper layers detect more complex patterns and shapes.</p>
+                    </div>
+                    
+                    <div class="viz-stage">
+                        <h3>Feature Maps</h3>
+                        <div class="viz-image" id="viz-features"></div>
+                        <p>High-level features extracted from the image.</p>
+                    </div>
+                    
+                    <div class="viz-stage">
+                        <h3>Fully Connected Layer</h3>
+                        <div class="viz-heatmap" id="viz-fc"></div>
+                        <p>Neurons combine features for classification.</p>
+                    </div>
+                    
+                    <div class="viz-stage">
+                        <h3>Output Layer</h3>
+                        <div id="viz-output"></div>
+                        <p>Final class predictions with confidence scores.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="sidebar">
+            <h2>How Image Classification Works</h2>
+            <p>Image classification is a core computer vision task where AI systems identify what's in a picture.</p>
+            
+            <div class="info-box">
+                <strong>Classification Process:</strong> When you upload an image, the neural network analyzes it through multiple layers to extract features and predict the most likely category.
+            </div>
+            
+            <h3>Behind the Scenes</h3>
+            <p>This classifier uses a convolutional neural network (CNN) with the following steps:</p>
+            <ol>
+                <li>Feature extraction through convolutional layers</li>
+                <li>Pooling to reduce dimensions</li>
+                <li>Fully connected layers for classification</li>
+                <li>Softmax function to generate probabilities</li>
+            </ol>
+            
+            <div class="architecture-diagram">
+                <svg width="260" height="180" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="10" y="40" width="40" height="100" fill="#e0f2fe" stroke="#4285f4" stroke-width="2" />
+                    <text x="30" y="150" text-anchor="middle" font-size="10">Input</text>
+                    
+                    <rect x="60" y="50" width="30" height="80" fill="#d1e7dd" stroke="#34a853" stroke-width="2" />
+                    <text x="75" y="150" text-anchor="middle" font-size="10">Conv</text>
+                    
+                    <rect x="100" y="60" width="20" height="60" fill="#d1e7dd" stroke="#34a853" stroke-width="2" />
+                    <text x="110" y="150" text-anchor="middle" font-size="10">Pool</text>
+                    
+                    <rect x="130" y="60" width="20" height="60" fill="#d1e7dd" stroke="#34a853" stroke-width="2" />
+                    <text x="140" y="150" text-anchor="middle" font-size="10">Conv</text>
+                    
+                    <rect x="160" y="70" width="15" height="40" fill="#d1e7dd" stroke="#34a853" stroke-width="2" />
+                    <text x="167" y="150" text-anchor="middle" font-size="10">Pool</text>
+                    
+                    <rect x="185" y="70" width="30" height="40" fill="#fff2cc" stroke="#fbbc04" stroke-width="2" />
+                    <text x="200" y="150" text-anchor="middle" font-size="10">FC</text>
+                    
+                    <rect x="225" y="70" width="30" height="40" fill="#f8d7da" stroke="#ea4335" stroke-width="2" />
+                    <text x="240" y="150" text-anchor="middle" font-size="10">Output</text>
+                    
+                    <!-- Arrows -->
+                    <line x1="50" y1="90" x2="60" y2="90" stroke="#333" stroke-width="1" marker-end="url(#arrowhead)" />
+                    <line x1="90" y1="90" x2="100" y2="90" stroke="#333" stroke-width="1" marker-end="url(#arrowhead)" />
+                    <line x1="120" y1="90" x2="130" y2="90" stroke="#333" stroke-width="1" marker-end="url(#arrowhead)" />
+                    <line x1="150" y1="90" x2="160" y2="90" stroke="#333" stroke-width="1" marker-end="url(#arrowhead)" />
+                    <line x1="175" y1="90" x2="185" y2="90" stroke="#333" stroke-width="1" marker-end="url(#arrowhead)" />
+                    <line x1="215" y1="90" x2="225" y2="90" stroke="#333" stroke-width="1" marker-end="url(#arrowhead)" />
+                    
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+                        </marker>
+                    </defs>
+                </svg>
+            </div>
+            
+            <h3>Understanding Confidence</h3>
+            <p>The colored bars represent the model's confidence in each prediction. Higher percentages indicate greater certainty.</p>
+            
+            <div class="tip-box">
+                <strong>Learning Tip:</strong> Try uploading different variations of similar objects to see how factors like angle, lighting, and background affect classification accuracy.
+            </div>
+            
+            <h3>Common Challenges</h3>
+            <p>Image classifiers may struggle with:</p>
+            <ul>
+                <li>Objects in unusual orientations</li>
+                <li>Multiple objects in one image</li>
+                <li>Poor lighting conditions</li>
+                <li>Objects the model wasn't trained on</li>
+            </ul>
+            
+            <h3>Try These Examples</h3>
+            <p>For best results, experiment with clear images of:</p>
+            <ul>
+                <li>Common animals (dogs, cats, birds)</li>
+                <li>Everyday objects (furniture, vehicles)</li>
+                <li>Food items</li>
+                <li>Natural scenes</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Set confidence bar widths
+        document.querySelectorAll('.confidence-bar-fill').forEach(bar => {
+            const confidence = bar.dataset.confidence;
+            bar.style.width = `${confidence}%`;
+        });
+
+        // Get DOM elements
+        const form = document.getElementById('upload-form');
+        const fileInput = document.getElementById('image-input');
+        const fileNameDisplay = document.getElementById('file-name');
+        const submitBtn = document.getElementById('submit-btn');
+        const loadingIndicator = document.getElementById('loading');
+        const dropArea = document.getElementById('drop-area');
+        const tabs = document.querySelectorAll('.nav-tab');
+        const mainContentContainers = document.querySelectorAll('.main-content');
+
+        // Tab navigation
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Update active tab
+                tabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Show active content
+                const tabId = this.getAttribute('data-tab');
+                mainContentContainers.forEach(container => {
+                    container.style.display = 'none';
+                });
+                document.getElementById(tabId + '-content').style.display = 'block';
+            });
+        });
+
+        // Enable submit button only when a file is selected
+        fileInput.addEventListener('change', function() {
+    if (this.files.length > 0) {
+        const file = this.files[0];
+        
+        // Validate file is an image
+        if (!file.type.startsWith('image/')) {
+            fileNameDisplay.textContent = 'Please select a valid image file';
+            fileNameDisplay.style.color = '#d93025';
+            submitBtn.disabled = true;
+            return;
+        }
+        
+        // Display file name and enable submit
+        fileNameDisplay.textContent = file.name;
+        fileNameDisplay.style.color = '#34a853';
+        submitBtn.disabled = false;
+        
+        // Preview image
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Check if results container already exists, if not create it
+            let resultsContainer = document.querySelector('.results-container');
+            if (!resultsContainer) {
+                resultsContainer = document.createElement('div');
+                resultsContainer.className = 'results-container';
+                document.getElementById('classify-tab-content').appendChild(resultsContainer);
+            }
+            
+            // Add image preview
+            resultsContainer.innerHTML = `
+                <div class="image-display">
+                    <h2>Selected Image</h2>
+                    <img src="${e.target.result}" alt="Selected Image">
+                </div>
+            `;
+            
+            // Update visualization with the image
+            updateVisualization(e.target.result);
+        }
+        reader.readAsDataURL(file);
+    } else {
+        fileNameDisplay.textContent = '';
+        submitBtn.disabled = true;
+    }
+});
+
+        // Show loading indicator on form submit
+        form.addEventListener('submit', function() {
+            loadingIndicator.style.display = 'block';
+            submitBtn.disabled = true;
+        });
+
+        // Drag and drop functionality
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            dropArea.style.borderColor = '#4285f4';
+            dropArea.style.backgroundColor = 'rgba(66, 133, 244, 0.05)';
+        }
+        
+        function unhighlight() {
+            dropArea.style.borderColor = '#ccc';
+            dropArea.style.backgroundColor = 'transparent';
+        }
+        
+        dropArea.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                fileInput.files = files;
+                // Trigger change event
+                const event = new Event('change');
+                fileInput.dispatchEvent(event);
+            }
+        }
+
+        // Collapsible sections
+        const collapsibles = document.querySelectorAll('.collapsible');
+        
+        collapsibles.forEach(collapsible => {
+            collapsible.addEventListener('click', function() {
+                this.classList.toggle('active');
+                const content = this.nextElementSibling;
+                if (content.style.maxHeight) {
+                    content.style.maxHeight = null;
+                } else {
+                    content.style.maxHeight = content.scrollHeight + "px";
+                }
+            });
+        });
+
+        function updateVisualization(imageUrl) {
+    // Show visualization stages and hide placeholder
+    document.getElementById('visualization-placeholder').style.display = 'none';
+    document.getElementById('visualization-stages').style.display = 'block';
+    
+    // Set input image
+    const inputViz = document.getElementById('viz-input');
+    inputViz.innerHTML = `<img src="${imageUrl}" alt="Input Image" style="width: 100%; height: 100%; object-fit: cover;">`;
+    
+    // Simulate processing through CNN layers with timeouts
+    setTimeout(() => {
+        simulateConvLayer('viz-conv1');
+    }, 500);
+    
+    setTimeout(() => {
+        simulatePoolLayer('viz-pool1');
+    }, 1000);
+    
+    setTimeout(() => {
+        simulateConvLayer('viz-conv2');
+    }, 1500);
+    
+    setTimeout(() => {
+        simulateFeatureMaps('viz-features');
+    }, 2000);
+    
+    setTimeout(() => {
+        simulateHeatmap('viz-fc');
+    }, 2500);
+    
+    setTimeout(() => {
+        const predictions = document.querySelectorAll('.prediction-item');
+        if (predictions.length > 0) {
+            const outputViz = document.getElementById('viz-output');
+            outputViz.innerHTML = '';
+            // Clone the predictions list to the visualization
+            predictions.forEach(pred => {
+                outputViz.appendChild(pred.cloneNode(true));
+            });
+        }
+    }, 3000);
+}
+
+function simulateConvLayer(elementId) {
+    const element = document.getElementById(elementId);
+    element.innerHTML = '';
+    element.classList.add('viz-layer-animation');
+    
+    // Create a grid of colored blocks to represent convolution
+    const gridSize = 8;
+    const blockSize = 224 / gridSize;
+    
+    for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+            const block = document.createElement('div');
+            block.style.position = 'absolute';
+            block.style.left = (j * blockSize) + 'px';
+            block.style.top = (i * blockSize) + 'px';
+            block.style.width = blockSize + 'px';
+            block.style.height = blockSize + 'px';
+            block.style.backgroundColor = `hsl(${Math.random() * 360}, 70%, 70%)`;
+            block.style.opacity = '0.7';
+            element.appendChild(block);
+        }
+    }
+}
+
+function simulatePoolLayer(elementId) {
+    const element = document.getElementById(elementId);
+    element.innerHTML = '';
+    element.classList.add('viz-layer-animation');
+    
+    // Create a smaller grid to represent pooling/downsampling
+    const gridSize = 4;
+    const blockSize = 224 / gridSize;
+    
+    for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+            const block = document.createElement('div');
+            block.style.position = 'absolute';
+            block.style.left = (j * blockSize) + 'px';
+            block.style.top = (i * blockSize) + 'px';
+            block.style.width = blockSize + 'px';
+            block.style.height = blockSize + 'px';
+            block.style.backgroundColor = `hsl(${Math.random() * 360}, 70%, 70%)`;
+            block.style.opacity = '0.7';
+            element.appendChild(block);
+        }
+    }
+}
+
+function simulateFeatureMaps(elementId) {
+    const element = document.getElementById(elementId);
+    element.innerHTML = '';
+    
+    // Create multiple small feature maps
+    const mapSize = 56;
+    const margin = 2;
+    const mapsPerRow = 4;
+    
+    for (let i = 0; i < 16; i++) {
+        const map = document.createElement('div');
+        const row = Math.floor(i / mapsPerRow);
+        const col = i % mapsPerRow;
+        
+        map.style.position = 'absolute';
+        map.style.left = (col * (mapSize + margin)) + 'px';
+        map.style.top = (row * (mapSize + margin)) + 'px';
+        map.style.width = mapSize + 'px';
+        map.style.height = mapSize + 'px';
+        map.style.backgroundColor = `hsl(${Math.random() * 360}, 70%, 70%)`;
+        element.appendChild(map);
+    }
+}
+
+function simulateHeatmap(elementId) {
+    const element = document.getElementById(elementId);
+    element.innerHTML = '';
+    
+    // Create a heatmap-like visualization
+    const width = element.offsetWidth;
+    const height = element.offsetHeight;
+    const cellSize = 10;
+    
+    for (let i = 0; i < height / cellSize; i++) {
+        for (let j = 0; j < width / cellSize; j++) {
+            const cell = document.createElement('div');
+            cell.style.position = 'absolute';
+            cell.style.left = (j * cellSize) + 'px';
+            cell.style.top = (i * cellSize) + 'px';
+            cell.style.width = cellSize + 'px';
+            cell.style.height = cellSize + 'px';
+            
+            // Make some cells "activate" more than others
+            const intensity = Math.random();
+            cell.style.backgroundColor = `rgba(66, 133, 244, ${intensity})`;
+            
+            element.appendChild(cell);
+        }
+    }
+}
+
+    </script>
+</body>
+</html>
